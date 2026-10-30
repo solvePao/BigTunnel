@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>BigTunnel — Planetary Antipode & Geodesy Visualizer | solvepao research</title>
+  <meta name="description" content="Calculate and visualize the exact antipodal point on Earth through a subterranean tunnel traversing the planetary core. Pure static scientific geodesy tool.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="BigTunnel — Planetary Antipode Calculator">
+  <meta property="og:description" content="Interactive 3D Earth and OpenStreetMap visualizer computing antipodal coordinates passing straight through Earth's core.">
+  <meta property="og:type" content="website">
+
+  <!-- Vendor Stylesheet (Leaflet) -->
+  <link rel="stylesheet" href="vendor/leaflet.css">
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to explorer</a>
+  <!-- Scientific Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <img src="assets/favicon.svg" alt="BigTunnel Logo" class="brand-logo" width="32" height="32">
+        <div class="brand-text">
+          <h1 class="brand-title">BigTunnel</h1>
+          <span class="brand-tagline">An experiment in planetary geometry</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-locate-me" class="btn btn-primary" title="Detect GPS coordinates using device sensors">
+          <svg class="btn-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="22" y1="12" x2="18" y2="12"></line>
+            <line x1="6" y1="12" x2="2" y2="12"></line>
+            <line x1="12" y1="6" x2="12" y2="2"></line>
+            <line x1="12" y1="22" x2="12" y2="18"></line>
+          </svg>
+          <span>Detect my location</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="app-main">
+    <section class="page-intro">
+      <div><p class="eyebrow">GEODESY / INTERACTIVE EXPLORER</p>
+      <h2>The other side of Earth.</h2>
+      <p>Pick a point. Follow a straight line through the center. Find its antipode.</p></div>
+
+    </section>
+    <div class="workspace">
+    <aside class="location-panel" aria-label="Location and antipode calculator">
+      <div class="input-section">
+        <p class="step-label"><span>01</span> Choose your starting point</p>
+        <label class="field-label" for="location-search-input">Search for a place</label>
+        <div class="search-box-container">
+          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+          <input type="search" id="location-search-input" class="search-input" placeholder="City, island, or landmark" autocomplete="off" aria-describedby="search-status" aria-controls="search-results-dropdown" aria-expanded="false">
+          <div id="search-results-dropdown" class="search-dropdown hidden"></div>
+        </div>
+        <p id="search-status" class="field-hint" role="status">Or enter decimal coordinates below.</p>
+        <form id="coordinate-form">
+          <div class="coordinate-inputs">
+            <label for="latitude-input">Latitude<input id="latitude-input" type="number" min="-90" max="90" step="any" value="40.4168" required inputmode="decimal"></label>
+            <label for="longitude-input">Longitude<input id="longitude-input" type="number" min="-180" max="180" step="any" value="-3.7038" required inputmode="decimal"></label>
+          </div>
+          <p class="field-hint">North / east + &nbsp;·&nbsp; South / west −</p>
+          <button class="btn btn-primary calculate-btn" type="submit">Find antipode <span aria-hidden="true">↗</span></button>
+        </form>
+        <label class="field-label example-label" for="example-select">Or try an example</label>
+        <select id="example-select"><option value="">Explore a starting point…</option></select>
+      </div>
+      <section class="result-section" aria-label="Calculated coordinates" aria-live="polite">
+        <p class="step-label"><span>02</span> Meet your opposite</p>
+        <div class="coord-box box-departure">
+          <p class="point-label"><span class="point-dot dot-origin">A</span> ORIGIN</p>
+          <p id="departure-location-name" class="location-name-sub">Madrid, Spain</p>
+          <p id="dep-coords-dec" class="coord-primary"></p>
+          <p id="dep-coords-dms" class="coord-secondary"></p>
+        </div>
+        <div class="connection-note"><span></span> Through the center of Earth <span></span></div>
+        <div class="coord-box box-antipode">
+          <div class="coord-header-row"><p class="point-label"><span class="point-dot dot-terminal">B</span> ANTIPODE</p><span id="antipode-type-badge" class="status-badge status-loading">Locating…</span></div>
+          <p id="antipode-location-name" class="antipode-title">New Zealand</p>
+          <p id="anti-coords-dec" class="coord-primary"></p>
+          <p id="anti-coords-dms" class="coord-secondary"></p>
+        </div>
+        <div class="result-actions"><a id="btn-view-antipode-map" class="btn btn-ghost" href="#" target="_blank" rel="noopener noreferrer">OpenStreetMap ↗</a><button id="btn-copy-antipode" class="btn btn-ghost">Copy coordinates</button></div>
+        <details class="result-details"><summary>About this location</summary><p id="antipode-details-text"></p></details>
+      </section>
+    </aside>
+    <div class="exploration-panel">
+      <div class="exploration-header"><p class="step-label"><span>03</span> Explore the geometry</p>      <nav class="nav-tabs" aria-label="Tool Views">
+        <button class="nav-tab-btn active" data-view="globe" aria-pressed="true">
+          <svg class="tab-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span>Globe</span>
+        </button>
+        <button class="nav-tab-btn" data-view="map" aria-pressed="false">
+          <svg class="tab-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          <span>Map</span>
+        </button>
+        <button class="nav-tab-btn" data-view="drill" aria-pressed="false">
+          <svg class="tab-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="4"></circle>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+          </svg>
+          <span>Physics</span>
+        </button>
+        <button class="nav-tab-btn" data-view="research" aria-pressed="false">
+          <svg class="tab-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+          <span>Learn</span>
+        </button>
+      </nav>
+
+</div>
+    <!-- View Panels -->
+    <div class="viewports-wrapper">
+
+      <!-- PANEL 1: 3D Wiremesh Earth -->
+      <section id="panel-globe-view" class="view-panel active-panel">
+        <div id="globe-canvas-container" class="globe-viewport">
+          <!-- Canvas injected here by Three.js -->
+
+          <p class="viewport-instruction">Drag to rotate · Scroll or pinch to zoom</p>
+          <!-- Globe controls -->
+          <div class="globe-overlay-hud">
+            <div class="hud-tag">
+              <span class="hud-status-dot"></span>
+              <span>EARTH / SPHERICAL MODEL</span>
+            </div>
+
+            <!-- Scientific Legend -->
+            <div class="hud-legend">
+              <div class="legend-item"><span class="legend-swatch swatch-origin"></span> Point A (Origin)</div>
+              <div class="legend-item"><span class="legend-swatch swatch-terminal"></span> Point B (Antipode)</div>
+              <div class="legend-item"><span class="legend-swatch swatch-borehole"></span> Tunnel</div>
+              <div class="legend-item"><span class="legend-swatch swatch-core"></span> Core</div>
+            </div>
+          </div>
+        </div>
+            <div class="hud-controls-toolbar">
+              <button id="btn-globe-cross" class="hud-btn" title="View Earth perpendicular to tunnel trajectory">
+                <span>Cross-Section</span>
+              </button>
+              <button id="btn-globe-start" class="hud-btn" title="Focus camera on Point A Origin">
+                <span>Origin (A)</span>
+              </button>
+              <button id="btn-globe-anti" class="hud-btn" title="Focus camera on Point B Antipode">
+                <span>Antipode (B)</span>
+              </button>
+              <button id="btn-globe-core" class="hud-btn" title="Zoom to Earth's planetary core">
+                <span>Earth’s core</span>
+              </button>
+              <button id="btn-globe-rotate" class="hud-btn" title="Toggle orbital rotation" aria-pressed="false">
+                <span>Auto-Rotate</span>
+              </button>
+              <button id="btn-globe-xray" aria-pressed="false" class="hud-btn" title="Toggle shell transparency">
+                <span>X-Ray</span>
+              </button>
+            </div>
+
+      </section>
+
+      <!-- PANEL 2: Map -->
+      <section id="panel-map-view" class="view-panel view-panel-hidden">
+        <div class="map-wrapper">
+          <div class="map-controls-bar">
+            <div class="map-switch-buttons">
+              <button id="btn-map-fly-start" class="btn btn-sm btn-ghost active">Focus Origin (A)</button>
+              <button id="btn-map-fly-anti" class="btn btn-sm btn-ghost">Focus Antipode (B)</button>
+            </div>
+
+
+          </div>
+
+          <div id="osm-map" class="osm-map-container"></div>
+        </div>
+      </section>
+
+      <!-- PANEL 3: Core Physics & Gravity Simulator -->
+      <section id="panel-drill-view" class="view-panel view-panel-hidden">
+        <div class="drill-simulator-container">
+          <div class="simulator-header">
+            <div class="simulator-title-group">
+              <h2 class="section-title">A journey through gravity</h2>
+              <p class="section-subtitle">
+                An idealized gravity train in a uniform-density Earth. No friction, air resistance, or rotation. Move the slider to explore; temperature and pressure are illustrative estimates.
+              </p>
+            </div>
+            <button id="btn-play-drill" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Run simulation</span>
+            </button>
+          </div>
+
+          <!-- Interactive Depth Slider -->
+          <div class="slider-control-card">
+            <div class="slider-labels">
+              <span>Surface (0 km)</span>
+              <span id="drill-depth-readout" class="current-depth-badge">0 km / 12,742 km</span>
+              <span>Antipode (12,742 km)</span>
+            </div>
+            <input type="range" id="drill-depth-slider" min="0" max="12742.0176" value="0" step="any" aria-label="Distance traveled through Earth in kilometers" class="depth-range-slider">
+          </div>
+
+          <!-- Telemetry Readouts (Clean Mathematical Formatting) -->
+          <div class="telemetry-grid">
+            <div class="telemetry-card">
+              <span class="telemetry-label">INTERNAL STRATUM</span>
+              <span id="drill-layer-name" class="telemetry-value text-accent">Crust</span>
+              <span id="drill-layer-desc" class="telemetry-sub">Solid brittle silicate rock</span>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="telemetry-label">INSTANTANEOUS VELOCITY</span>
+              <span id="drill-speed-readout" class="telemetry-value">0 km/h</span>
+              <span class="telemetry-sub">v = √[(g₀/R)(R² − r²)] · uniform density</span>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="telemetry-label">GRAVITATIONAL ACCELERATION</span>
+              <span id="drill-gravity-readout" class="telemetry-value">9.81 m/s²</span>
+              <span class="telemetry-sub">Linear decay: g = 0.00 m/s&sup2; at center</span>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="telemetry-label">ESTIMATED TEMPERATURE</span>
+              <span id="drill-temp-readout" class="telemetry-value">20 °C</span>
+              <span class="telemetry-sub">Reaches &sim;5,700&deg;C in inner core</span>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="telemetry-label">HYDROSTATIC PRESSURE</span>
+              <span id="drill-pressure-readout" class="telemetry-value">0.0 GPa</span>
+              <span class="telemetry-sub">Reaches 364 GPa (3.6 &times; 10<sup>6</sup> atm)</span>
+            </div>
+          </div>
+
+          <section class="physics-equations" aria-label="Mathematical models">
+            <h3 class="subsection-title">The mathematics behind the journey</h3>
+            <article class="article-card">
+              <h3 class="article-title">Coordinate Transformation Formulation</h3>
+              <p>For any starting geodetic position (&phi;, &lambda;) on a spherical datum:</p>
+              <div class="math-block">
+                <div class="math-formula-row"><strong>Antipodal Latitude:</strong> &phi;&prime; = &minus;&phi;</div>
+                <div class="math-formula-row"><strong>Antipodal Longitude:</strong> &lambda;&prime; = wrap(&lambda; + 180&deg;)</div>
+                <div class="math-formula-row"><strong>Surface Distance:</strong> <i>d</i><sub>surface</sub> = &pi; &middot; <i>R</i> &approx; 20,015 km</div>
+                <div class="math-formula-row"><strong>Core Tunnel Distance:</strong> <i>d</i><sub>tunnel</sub> = 2 &middot; <i>R</i> &approx; 12,742 km</div>
+              </div>
+              <p>
+                <strong>Solar Time Inversion:</strong> Exactly 12 hours difference. When departure experiences solar noon, the antipode is at solar midnight.
+              </p>
+            </article>
+
+            <article class="article-card">
+              <h3 class="article-title">Harmonic Gravity Train Model</h3>
+              <p>
+                Under Gauss's law for gravity inside a uniform spherical mass, the restoring gravitational force is directly proportional to radial distance <i>r</i> from the center:
+              </p>
+              <div class="math-block">
+                <div class="math-formula-row"><i>F</i>(<i>r</i>) = &minus;(<i>G</i> &middot; <i>M</i> &middot; <i>m</i> / <i>R</i><sup>3</sup>) <i>r</i> = &minus;<i>m</i> &omega;<sup>2</sup> <i>r</i></div>
+                <div class="math-formula-row"><i>t</i><sub>transit</sub> = &pi; &radic;(<i>R</i> / <i>g</i>) &approx; 42 min 12 s (uniform density)</div>
+                <div class="math-formula-row"><i>t</i><sub>PREM</sub> &approx; 38 min 11 s (realistic core density model)</div>
+              </div>
+              <p>
+                An object dropped into the shaft accelerates to maximum velocity at the planetary center before inertia carries it up to come to rest at the antipode.
+              </p>
+            </article>          </section>
+
+          <!-- Stratified Interior Table -->
+          <div class="geology-strata-section">
+            <h3 class="subsection-title">Earth's Stratified Structural Layers</h3>
+            <div id="geology-layers-list" class="geology-layers-grid">
+              <!-- Dynamically populated from data.js -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 4: Science Research & Famous Presets -->
+      <section id="panel-research-view" class="view-panel view-panel-hidden">
+        <div class="research-container">
+          <div class="research-header">
+            <h2 class="section-title">Geodesy & Antipodal Principles</h2>
+            <p class="section-subtitle">
+              Discover antipodal places and explore how Earth’s geography connects them.
+            </p>
+          </div>
+
+          <!-- Academic Articles (Clean Formatted Formulas) -->
+          <div class="research-articles-grid">
+            <article class="article-card">
+              <h3 class="article-title">The Antipode Land Rarity Paradox</h3>
+              <p>
+                While <strong>29.2%</strong> of Earth's surface consists of continents and islands, only <strong>4.4%</strong> of total land area is antipodal to another landmass.
+              </p>
+              <p>
+                Continental crust is heavily concentrated in the Northern Hemisphere, while the vast Pacific and Southern Oceans dominate the Southern Hemisphere. Most land points therefore have an antipode in open ocean.
+              </p>
+            </article>
+
+
+          </div>
+
+          <!-- Presets -->
+          <div class="presets-section">
+            <h3 class="subsection-title">Curated Planetary Antipodal Pairs</h3>
+            <p class="section-subtitle">Select any pair to inspect the straight-line subterranean trajectory:</p>
+            <div id="famous-antipodes-list" class="presets-grid">
+              <!-- Dynamically populated from data.js -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <div class="distance-strip" aria-label="Earth dimensions"><div><span>THROUGH EARTH</span><strong id="metric-tunnel-dist">12,742 km</strong><small>Diameter</small></div><div><span>AROUND EARTH</span><strong id="metric-surface-dist">20,015 km</strong><small>Half circumference</small></div><div><span>ANGULAR SEPARATION</span><strong>180°</strong><small>Opposite directions</small></div></div>
+
+    </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <a class="research-credit" href="https://solvepao.com" target="_blank" rel="noopener noreferrer">solvepao <strong>research</strong> <span aria-hidden="true">↗</span></a>
+      <p>Exploring Earth, one opposite at a time.</p>
+      <span>© <span id="current-year">2026</span></span>
+    </div>
+  </footer>
+
+  <!-- Vendor Scripts -->
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.js"></script>
+  <script src="vendor/leaflet.js"></script>
+
+  <!-- Application Logic -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
